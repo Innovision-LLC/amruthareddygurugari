@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Brace Visual Inspection (Offline)</title>
+
+  <link rel="stylesheet" href="./style.css" />
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "./libs/three.module.js",
+        "three/examples/jsm/": "./libs/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+
+<body>
+  <div id="app">
+    <div id="panel">
+
+      <div class="card">
+        <h1>Brace Visual Inspection</h1>
+        <div class="muted">
+          Offline demo (no CDN). Load <b>Torso.glb</b> + <b>Brace.glb</b> and inspect fit.
+          <br/><br/>
+          <span class="pill">✅ Three.js (local)</span>
+          <span class="pill">✅ GLB</span>
+          <span class="pill">✅ Opacity</span>
+          <span class="pill">✅ Screenshot</span>
+          <span class="pill">✅ Report</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <label>1) Load Torso (GLB)</label>
+        <input id="torsoFile" type="file" accept=".glb,.gltf" />
+
+        <label style="margin-top:10px;">2) Load Brace (GLB)</label>
+        <input id="braceFile" type="file" accept=".glb,.gltf" />
+
+        <div class="small">Tip: select the Torso.glb and Brace.glb files from your folder.</div>
+      </div>
+
+      <div class="card">
+        <label>Brace Opacity <span id="opVal">0.55</span></label>
+        <input id="braceOpacity" type="range" min="0.05" max="1" step="0.05" value="0.55" style="width:100%;" />
+
+        <label style="margin-top:12px;">Torso Zoom <span id="torsoZoomVal">1.00</span></label>
+        <input id="torsoZoom" type="range" min="0.70" max="1.50" step="0.01" value="1.00" style="width:100%;" />
+
+        <button id="resetTorsoZoom" type="button" style="margin-top:10px;">Reset Torso Zoom</button>
+        <div class="small">Tip: Torso Zoom scales ONLY the torso (does not change camera).</div>
+
+        <div class="row">
+          <button id="toggleTorso" type="button">Toggle Torso</button>
+          <button id="toggleBrace" type="button">Toggle Brace</button>
+        </div>
+
+        <div class="row">
+          <button id="fitAll" type="button">Fit View</button>
+          <button id="resetView" type="button">Reset View</button>
+        </div>
+
+        <button id="screenshot" type="button">Save Screenshot</button>
+        <div class="small">Mouse: drag rotate • scroll zoom • right-drag pan</div>
+
+        <hr style="border:0;border-top:1px solid rgba(255,255,255,0.08);margin:12px 0;">
+
+        <button id="autoAlign" type="button">Auto-Align + Auto-Fit</button>
+        <button id="pickToggle" type="button">Enable Pick</button>
+
+        <div class="row">
+          <button id="fitHeatmap" type="button">Distance Heatmap</button>
+          <button id="collisionCheck" type="button">Collision Highlight</button>
+        </div>
+
+        <div class="row" style="margin-top:10px;">
+          <button id="oneClickReport" type="button">One-Click Report</button>
+        </div>
+
+        <div class="small" id="reportStatus" style="margin-top:6px;">
+          Report: —
+        </div>
+
+        <div class="row" style="margin-top:10px;">
+          <button id="fitScoreBtn" type="button">Fit Score</button>
+        </div>
+
+        <div class="small" id="fitSummary">
+          Fit Summary: — (run Heatmap first)
+        </div>
+
+        <div class="small">
+          Pick = click brace to highlight. Heatmap = red tight, green ok, blue loose.
+        </div>
+
+        <label style="margin-top:10px;">
+          Auto-scale brace
+          <input id="autoScaleBrace" type="checkbox" style="width:auto;">
+        </label>
+
+        <label style="margin-top:10px;">Slice View</label>
+        <div class="row">
+          <button id="sliceToggle" type="button">Enable Slice</button>
+          <button id="sliceReset" type="button">Reset Slice</button>
+        </div>
+
+        <label style="margin-top:10px;">
+          Slice Axis
+          <select id="sliceAxis" style="width:100%; padding:10px; border-radius:12px; border:1px solid rgba(255,255,255,0.14); background:rgba(255,255,255,0.06); color:#e8eefc;">
+            <option value="Y" selected>Y (Horizontal)</option>
+            <option value="X">X</option>
+            <option value="Z">Z</option>
+          </select>
+        </label>
+
+        <label>Slice Position <span id="sliceVal">0.50</span></label>
+        <input id="slicePos" type="range" min="0" max="1" step="0.001" value="0.50" style="width:100%;" />
+
+        <div class="small">Tip: Enable Slice → move slider to inspect overlap inside the brace.</div>
+      </div>
+
+      <div class="card">
+        <div class="muted">
+          Run:
+          <br/><code>python3 -m http.server 8000</code>
+          <br/>Open:
+          <br/><code>http://localhost:8000/ceo-level1-demo.html</code>
+        </div>
+      </div>
+
+    </div>
+
+    <div id="viewport">
+      <div id="hud">
+        <span class="pill" id="fps">FPS: —</span>
+        <span class="pill" id="models">Models: 0/2</span>
+      </div>
+      <div id="status">Offline ready ✅ Select Torso.glb and Brace.glb.</div>
+    </div>
+
+  </div>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
