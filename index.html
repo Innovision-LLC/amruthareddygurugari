@@ -1,149 +1,437 @@
+
 <!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Brace Visual Inspection (Offline)</title>
+  <title>BraceViz | Agentic + Structural Auditor + Gyroid</title>
 
   <link rel="stylesheet" href="./style.css" />
 
+  <!-- Import map (local Three.js to avoid CDN failures). -->
   <script type="importmap">
     {
       "imports": {
-        "three": "./libs/three.module.js",
-        "three/examples/jsm/": "./libs/examples/jsm/"
+        "three": "./three.js-master/build/three.module.js",
+        "three/examples/jsm/": "./three.js-master/examples/jsm/"
       }
     }
   </script>
 </head>
 
 <body>
-  <div id="app">
-    <div id="panel">
+  <div id="app" class="layout workstation-container">
+    <header class="top-nav">
+      <div class="nav-brand">BraceViz <span>PRO</span></div>
 
-      <div class="card">
-        <h1>Brace Visual Inspection</h1>
-        <div class="muted">
-          Offline demo (no CDN). Load <b>Torso.glb</b> + <b>Brace.glb</b> and inspect fit.
-          <br/><br/>
-          <span class="pill">✅ Three.js (local)</span>
-          <span class="pill">✅ GLB</span>
-          <span class="pill">✅ Opacity</span>
-          <span class="pill">✅ Screenshot</span>
-          <span class="pill">✅ Report</span>
+      <nav class="nav-links">
+        <div class="nav-item">
+          <button id="navFitTrigger" class="nav-trigger">🧬 Fitting Engine</button>
+          <div id="fitMenu" class="megamenu">
+            <div class="menu-grid">
+              <button id="menuSmartFit" class="menu-btn">🧠 AI Smart Fit</button>
+              <button id="menuAutoTighten" class="menu-btn">🧲 Auto Tighten</button>
+              <button id="menuClinicalSnap" class="menu-btn">🧭 Clinical Snap</button>
+              <button id="menuForceFit" class="menu-btn">🎯 Force Fit 80</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="nav-item">
+          <button id="navAnalysisTrigger" class="nav-trigger">📊 Analysis</button>
+          <div id="analysisMenu" class="megamenu">
+            <div class="menu-grid">
+              <button id="menuLandmarks" class="menu-btn">📍 Auto Landmarks</button>
+              <button id="menuHighRes" class="menu-btn">🧪 High-Res Scan</button>
+              <button id="menuAudit" class="menu-btn">🛡️ Structural Audit</button>
+              <div class="menu-caption">Anatomical Dataset</div>
+              <select id="navProfileSelect" class="menu-btn menu-select">
+                <option value="clinical44">Clinical 44 (Standard)</option>
+                <option value="smpl72">SMPL 72 (Advanced)</option>
+              </select>
+              <button id="menuSnapshot" class="menu-btn">📸 Export Data Snapshot</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="nav-item">
+          <button id="navWorkspaceTrigger" class="nav-trigger">🩻 Workspace</button>
+          <div id="workspaceMenu" class="megamenu">
+            <div class="menu-grid">
+              <button id="menuSkinHeatmap" class="menu-btn">🔥 Skin Heatmap</button>
+              <button id="menuXray" class="menu-btn">🩻 X-Ray Toggle</button>
+              <button id="menuSlice" class="menu-btn">🔪 Section View</button>
+              <button id="menuZones" class="menu-btn">📏 Show Zones</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="nav-item">
+          <div class="nav-trigger tension-control">
+            <span class="tension-label">TENSION</span>
+            <div class="tension-track">
+              <input id="tensionSlider" type="range" min="0.7" max="1.12" step="0.005" value="1.0" />
+              <span class="tension-target" title="Clinical target: 94%"></span>
+            </div>
+            <span id="tensionVal" class="tension-value">100%</span>
+          </div>
+        </div>
+
+        <div class="nav-item">
+          <div class="nav-trigger tension-control penetration-control">
+            <span class="tension-label">PENETRATION</span>
+            <div class="tension-track">
+              <input id="penetrationSlider" type="range" min="0" max="100" step="1" value="5" />
+            </div>
+            <span id="penetrationVal" class="tension-value">5.0mm</span>
+          </div>
+        </div>
+
+        <div class="nav-item">
+          <button id="navAssessmentTrigger" class="nav-trigger assessment-trigger">📊 Live Assessment</button>
+          <div id="assessmentMenu" class="megamenu assessment-menu">
+            <div class="hud-header">AI CLINICAL STATUS</div>
+            <div class="assessment-head">
+              <div id="ceoScore" class="assessment-score">0/100</div>
+              <div id="assessmentStatusHUD" class="assessment-status">Awaiting Fit</div>
+            </div>
+            <div class="assessment-kpis">
+              <div class="assessment-kpi">
+                <div class="assessment-label">TIGHT</div>
+                <div id="tightHUD" class="assessment-value">0%</div>
+              </div>
+              <div class="assessment-kpi">
+                <div class="assessment-label">OK</div>
+                <div id="okHUD" class="assessment-value">0%</div>
+              </div>
+              <div class="assessment-kpi">
+                <div class="assessment-label">LOOSE</div>
+                <div id="looseHUD" class="assessment-value">0%</div>
+              </div>
+            </div>
+            <div id="ceoMetrics" class="assessment-metrics">Tight 0% | OK 0% | Loose 0%</div>
+            <div id="ceoRec" class="assessment-rec">Awaiting AI optimization...</div>
+            <div id="ceoClinical" class="assessment-clinical">Clinical: —</div>
+            <div id="pulseBar" class="pulse-container"><div class="pulse-fill"></div></div>
+            <button id="productionSignOff" class="menu-btn signoff-btn">🖊️ Production Sign-Off</button>
+          </div>
+        </div>
+
+        <div class="nav-item">
+          <button id="navManualTrigger" class="nav-trigger">🛠 Manual</button>
+          <div id="manualMenu" class="megamenu">
+            <div class="menu-row">
+              <button id="menuNxm" class="menu-btn">X−</button>
+              <button id="menuNxp" class="menu-btn">X+</button>
+              <button id="menuNym" class="menu-btn">Y−</button>
+              <button id="menuNyp" class="menu-btn">Y+</button>
+              <button id="menuNzm" class="menu-btn">Z−</button>
+              <button id="menuNzp" class="menu-btn">Z+</button>
+            </div>
+            <div class="menu-row">
+              <button id="menuRxm" class="menu-btn">Rx−</button>
+              <button id="menuRxp" class="menu-btn">Rx+</button>
+              <button id="menuRym" class="menu-btn">Ry−</button>
+              <button id="menuRyp" class="menu-btn">Ry+</button>
+              <button id="menuRzm" class="menu-btn">Rz−</button>
+              <button id="menuRzp" class="menu-btn">Rz+</button>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      <div class="nav-actions">
+        <button id="navRunDemo" class="pill-btn primary">🎬 Run Demo</button>
+      </div>
+    </header>
+
+    <!-- 3D VIEWPORT -->
+    <main class="view avatar-stage viewport-stage">
+      <div class="topline">
+        <div id="patient" class="pill">Patient: —</div>
+        <div class="pill-row">
+          <div id="models" class="pill">Models: 0/2</div>
+          <div id="fps" class="pill">FPS: —</div>
         </div>
       </div>
 
-      <div class="card">
-        <label>1) Load Torso (GLB)</label>
-        <input id="torsoFile" type="file" accept=".glb,.gltf" />
+      <div id="viewport" class="viewport"></div>
 
-        <label style="margin-top:10px;">2) Load Brace (GLB)</label>
-        <input id="braceFile" type="file" accept=".glb,.gltf" />
-
-        <div class="small">Tip: select the Torso.glb and Brace.glb files from your folder.</div>
+      <div id="productionSeal" class="production-seal">PROD READY</div>
+      <div class="neural-audit-hud">
+        <div class="hud-header">STRUCTURAL INTEGRITY</div>
+        <div class="audit-row"><span>Min Thick:</span><span id="minThickHUD">--</span></div>
+        <div class="audit-row"><span>Status:</span><span id="auditStatusHUD">Awaiting Scan</span></div>
       </div>
 
-      <div class="card">
-        <label>Brace Opacity <span id="opVal">0.55</span></label>
-        <input id="braceOpacity" type="range" min="0.05" max="1" step="0.05" value="0.55" style="width:100%;" />
+      <div class="bottom-dock floating-dock">
+        <button id="dockTorso" class="dock-action">Torso</button>
+        <button id="dockBrace" class="dock-action">Brace</button>
+        <div class="dock-divider"></div>
+        <button id="dockLandmarks" class="dock-action">🧷 Landmarks</button>
+        <button id="dockSmartFit" class="dock-action highlight">🧠 Auto-Fit</button>
+        <button id="dockReportPdf" class="dock-action">📄 Export</button>
+      </div>
 
-        <label style="margin-top:12px;">Torso Zoom <span id="torsoZoomVal">1.00</span></label>
-        <input id="torsoZoom" type="range" min="0.70" max="1.50" step="0.01" value="1.00" style="width:100%;" />
+      <div class="bottomline">
+        <div id="status" class="status">Offline ready ✅ Load Torso, then Brace.</div>
+      </div>
+    </main>
 
-        <button id="resetTorsoZoom" type="button" style="margin-top:10px;">Reset Torso Zoom</button>
-        <div class="small">Tip: Torso Zoom scales ONLY the torso (does not change camera).</div>
+    <!-- Legacy Control Panel (kept hidden for wiring/default values) -->
+    <aside class="panel legacy-panel">
+      <div class="brand">BraceViz <span>PRO</span></div>
+      <section class="card">
+        <h3>Load</h3>
+        <div class="row">
+          <label class="file">
+            <span>Torso</span>
+            <input id="torsoFile" type="file" accept=".glb,.gltf,.obj,.stl" />
+          </label>
+          <label class="file">
+            <span>Brace</span>
+            <input id="braceFile" type="file" accept=".glb,.gltf,.obj,.stl" />
+          </label>
+        </div>
 
         <div class="row">
-          <button id="toggleTorso" type="button">Toggle Torso</button>
-          <button id="toggleBrace" type="button">Toggle Brace</button>
+          <label class="file wide">
+            <span>Batch Torsos (optional)</span>
+            <input id="batchTorsoFiles" type="file" multiple accept=".glb,.gltf,.obj,.stl" />
+          </label>
+          <button id="batchRun" class="chip">Batch Run</button>
         </div>
 
         <div class="row">
-          <button id="fitAll" type="button">Fit View</button>
-          <button id="resetView" type="button">Reset View</button>
+          <label class="select wide">
+            <span>Curve Type</span>
+            <select id="curveType">
+              <option value="Neutral">Neutral</option>
+              <option value="Right Thoracic">Right Thoracic</option>
+              <option value="Left Thoracic">Left Thoracic</option>
+              <option value="Right Lumbar">Right Lumbar</option>
+              <option value="Left Lumbar">Left Lumbar</option>
+              <option value="S: R Thor / L Lum">S: R Thor / L Lum</option>
+              <option value="S: L Thor / R Lum">S: L Thor / R Lum</option>
+            </select>
+          </label>
         </div>
+      </section>
 
-        <button id="screenshot" type="button">Save Screenshot</button>
-        <div class="small">Mouse: drag rotate • scroll zoom • right-drag pan</div>
-
-        <hr style="border:0;border-top:1px solid rgba(255,255,255,0.08);margin:12px 0;">
-
-        <button id="autoAlign" type="button">Auto-Align + Auto-Fit</button>
-        <button id="pickToggle" type="button">Enable Pick</button>
+      <section class="card">
+        <h3>AI Fit & Clinical</h3>
 
         <div class="row">
-          <button id="fitHeatmap" type="button">Distance Heatmap</button>
-          <button id="collisionCheck" type="button">Collision Highlight</button>
+          <button id="smartFit" class="chip">🧠 Smart Fit</button>
+          <button id="autoTighten" class="chip">🧲 Auto Tighten</button>
+          <button id="forceFit80" class="chip">🎯 Force Fit 80</button>
+          <div id="smartStatus" class="pill grow">Smart Fit: idle</div>
         </div>
 
-        <div class="row" style="margin-top:10px;">
-          <button id="oneClickReport" type="button">One-Click Report</button>
-        </div>
-
-        <div class="small" id="reportStatus" style="margin-top:6px;">
-          Report: —
-        </div>
-
-        <div class="row" style="margin-top:10px;">
-          <button id="fitScoreBtn" type="button">Fit Score</button>
-        </div>
-
-        <div class="small" id="fitSummary">
-          Fit Summary: — (run Heatmap first)
-        </div>
-
-        <div class="small">
-          Pick = click brace to highlight. Heatmap = red tight, green ok, blue loose.
-        </div>
-
-        <label style="margin-top:10px;">
-          Auto-scale brace
-          <input id="autoScaleBrace" type="checkbox" style="width:auto;">
-        </label>
-
-        <label style="margin-top:10px;">Slice View</label>
         <div class="row">
-          <button id="sliceToggle" type="button">Enable Slice</button>
-          <button id="sliceReset" type="button">Reset Slice</button>
+          <button id="demoRecovery" class="chip">🎬 Run Clinical Recovery</button>
+          <button id="clinicalSnap" class="chip">🧭 Clinical Snap</button>
+          <button id="demoReset" class="chip">↺ Demo Reset</button>
         </div>
 
-        <label style="margin-top:10px;">
-          Slice Axis
-          <select id="sliceAxis" style="width:100%; padding:10px; border-radius:12px; border:1px solid rgba(255,255,255,0.14); background:rgba(255,255,255,0.06); color:#e8eefc;">
-            <option value="Y" selected>Y (Horizontal)</option>
-            <option value="X">X</option>
-            <option value="Z">Z</option>
-          </select>
-        </label>
-
-        <label>Slice Position <span id="sliceVal">0.50</span></label>
-        <input id="slicePos" type="range" min="0" max="1" step="0.001" value="0.50" style="width:100%;" />
-
-        <div class="small">Tip: Enable Slice → move slider to inspect overlap inside the brace.</div>
-      </div>
-
-      <div class="card">
-        <div class="muted">
-          Run:
-          <br/><code>python3 -m http.server 8000</code>
-          <br/>Open:
-          <br/><code>http://localhost:8000/ceo-level1-demo.html</code>
+        <div class="row">
+          <button id="ceoCinematic" class="chip wide">🎬 Run CEO Demo</button>
         </div>
-      </div>
 
-    </div>
+        <div class="row">
+          <label class="select wide">
+            <span>Snap Goal</span>
+            <select id="snapGoal">
+              <option value="correction95">Target: 95% (Correction)</option>
+              <option value="comfort69">Target: 69% (Comfort)</option>
+            </select>
+          </label>
+        </div>
 
-    <div id="viewport">
-      <div id="hud">
-        <span class="pill" id="fps">FPS: —</span>
-        <span class="pill" id="models">Models: 0/2</span>
-      </div>
-      <div id="status">Offline ready ✅ Select Torso.glb and Brace.glb.</div>
-    </div>
+        <div class="row">
+          <button id="rotateNext" class="chip">🔄 Rotate Next</button>
+          <div id="rotLabel" class="pill grow">Rotation: Yaw 0° | Pitch 0° | Roll 0°</div>
+        </div>
 
+        <div class="row">
+          <button id="lockFit" class="chip">🔒 Lock Fit</button>
+          <button id="resetToAI" class="chip">↩️ Reset to AI</button>
+          <button id="highResScan" class="chip">🧪 High-Res Scan</button>
+        </div>
+
+        <div class="row">
+          <button id="toggleRelief" class="chip">🟣 Relief: ON</button>
+          <button id="toggleXray" class="chip">🩻 Enable X-Ray</button>
+          <button id="showZones" class="chip">📏 Show Zones</button>
+        </div>
+
+        <div class="row">
+          <button id="toggleTorso" class="chip">👤 Torso</button>
+          <button id="toggleBrace" class="chip">🛡️ Brace</button>
+        </div>
+
+        <div id="alertBox" class="alert-neutral">
+          <div class="alert-title">Clinical Gate</div>
+          <div id="alertStatus" class="alert-status">Status: Waiting for Fit…</div>
+        </div>
+
+        <div class="grid2">
+          <div class="kpi">
+            <div class="k">CEO Score</div>
+            <div id="ceoScoreLegacy" class="v">Fit Score: —</div>
+          </div>
+          <div class="kpi">
+            <div class="k">Metrics</div>
+            <div id="ceoMetricsLegacy" class="v">Tight — | OK — | Loose —</div>
+          </div>
+          <div class="kpi">
+            <div class="k">Recommendation</div>
+            <div id="ceoRecLegacy" class="v">Recommendation: —</div>
+          </div>
+          <div class="kpi">
+            <div class="k">Clinical</div>
+            <div id="ceoClinicalLegacy" class="v">Clinical: —</div>
+          </div>
+        </div>
+
+        <pre id="clinicalWarnings" class="note"></pre>
+      </section>
+
+      <section class="card">
+        <h3>Section Analysis</h3>
+        <div class="row">
+          <button id="toggleSlice" class="chip wide">🔪 Enable Slicing</button>
+          <button id="orthoSync" class="chip">📐 Ortho Sync</button>
+          <button id="autoLandmarks" class="chip">🧷 Auto Landmarks</button>
+          <label class="select">
+            <span>Landmark Profile</span>
+            <select id="landmarkProfile">
+              <option value="clinical44">Clinical 44</option>
+              <option value="smpl72">SMPL 72</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="row">
+          <input id="fitSensitivity" type="range" min="0" max="2" step="1" value="0" />
+          <div id="fitSensitivityLabel" class="pill">Sensitivity: Relaxed | Sweet Spot 5-12mm</div>
+        </div>
+
+        <div class="row">
+          <input id="sliceSlider" type="range" min="0" max="100" value="50" />
+          <div id="sliceLabel" class="pill">Slice Height: 50%</div>
+        </div>
+
+        <div class="landmarkTable">
+          <div id="landmarkTableTitle" class="pill">Landmarks: —</div>
+          <div class="landmarkTableScroll">
+            <table class="landmarkGrid">
+              <thead>
+                <tr>
+                  <th>Point</th>
+                  <th>Y%</th>
+                  <th>Clearance</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="landmarkTableBody">
+                <tr>
+                  <td colspan="4">Run Auto Landmarks to populate table.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h3>Structural Auditor + Lattice</h3>
+
+        <div class="row">
+          <button id="runNeuralAudit" class="chip wide">🧱 Run Structural Audit</button>
+          <div id="safetyBadge" class="status-pill-large">Audit: —</div>
+        </div>
+
+        <div class="grid2">
+          <div class="kpi">
+            <div class="k">Min Wall Thickness (mm)</div>
+            <div id="minThick" class="v">—</div>
+          </div>
+          <div class="kpi">
+            <div class="k">Peak Stress (proxy)</div>
+            <div id="peakStress" class="v">—</div>
+          </div>
+        </div>
+
+        <div class="row">
+          <button id="runABA" class="chip">🧬 ABA Gyroid</button>
+          <button id="applyAeration" class="chip">🕸️ Aeration (Wireframe)</button>
+        </div>
+
+        <div class="hint">
+          Note: Thickness needs a **true shell (double surface / watertight)** to measure accurately.
+        </div>
+      </section>
+
+      <section class="card">
+        <h3>Manual Controls</h3>
+
+        <div class="row">
+          <button id="nxm" class="chip">X−</button>
+          <button id="nxp" class="chip">X+</button>
+          <button id="nym" class="chip">Y−</button>
+          <button id="nyp" class="chip">Y+</button>
+          <button id="nzm" class="chip">Z−</button>
+          <button id="nzp" class="chip">Z+</button>
+        </div>
+
+        <div class="row">
+          <button id="rxm" class="chip">Rx−</button>
+          <button id="rxp" class="chip">Rx+</button>
+          <button id="rym" class="chip">Ry−</button>
+          <button id="ryp" class="chip">Ry+</button>
+          <button id="rzm" class="chip">Rz−</button>
+          <button id="rzp" class="chip">Rz+</button>
+        </div>
+
+        <div class="row">
+          <button id="scaleDown" class="chip">Scale−</button>
+          <button id="scaleUp" class="chip">Scale+</button>
+        </div>
+
+        <div class="row">
+          <button id="sculptMode" class="chip wide">🧱 Sculpt Mode</button>
+          <div id="sculptStatus" class="pill">Sculpting: OFF</div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h3>Agentic Commands</h3>
+
+        <div id="aiChat" class="chat"></div>
+
+        <div class="aiBar">
+          <input id="aiInput" placeholder="Type: smart fit, relieve thoracic 5mm, audit, gyroid…" />
+          <button id="aiSend" class="chip">Send</button>
+          <button id="voiceToggle" class="chip">🎙️ Voice: OFF</button>
+        </div>
+
+        <pre id="agentLog" class="agentLog"></pre>
+      </section>
+
+      <section class="card">
+        <h3>Output</h3>
+        <div class="row">
+          <button id="screenshot" class="chip">📸 Screenshot</button>
+          <button id="report" class="chip">🧾 Download JSON</button>
+          <button id="reportPdf" class="chip">📄 Export PDF</button>
+        </div>
+      </section>
+    </aside>
   </div>
 
-  <script type="module" src="./app.js"></script>
+<script type="module" src="./app.js"></script>
+
 </body>
 </html>
+

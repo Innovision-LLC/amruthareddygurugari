@@ -1,0 +1,12 @@
+{
+  "name": "ai-server",
+  "version": "1.0.0",
+  "description": "AI backend for brace fit explanation",
+  "main": "server.mjs",
+  "scripts": {
+    "start": "node server.mjs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

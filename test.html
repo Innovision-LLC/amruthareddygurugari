@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>BraceViz | CDN Recovery Test</title>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+        "three/examples/jsm/controls/OrbitControls.js": "https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js",
+        "three/examples/jsm/loaders/GLTFLoader.js": "https://unpkg.com/three@0.160.0/examples/jsm/loaders/GLTFLoader.js",
+        "three/examples/jsm/loaders/OBJLoader.js": "https://unpkg.com/three@0.160.0/examples/jsm/loaders/OBJLoader.js",
+        "three/examples/jsm/loaders/STLLoader.js": "https://unpkg.com/three@0.160.0/examples/jsm/loaders/STLLoader.js"
+      }
+    }
+  </script>
+  <style>
+    body {
+      background: #0b0f17;
+      color: #fff;
+      font-family: sans-serif;
+      margin: 0;
+      display: flex;
+      height: 100vh;
+    }
+    #viewport {
+      flex-grow: 1;
+      background: #000;
+    }
+    .panel {
+      width: 300px;
+      padding: 20px;
+      border-left: 1px solid #333;
+      overflow-y: auto;
+    }
+    button {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      background: #2a3b5c;
+      color: white;
+      border: none;
+      border-radius: 5px;
+    }
+    button:hover {
+      background: #3d5585;
+    }
+    .status {
+      font-size: 12px;
+      color: #aaa;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div id="viewport"></div>
+
+  <aside class="panel">
+    <h3>Debug Panel</h3>
+    <div id="status" class="status">Waiting for Three.js...</div>
+
+    <label>Load Torso: <input type="file" id="torsoFile"></label><br><br>
+    <label>Load Brace: <input type="file" id="braceFile"></label><hr>
+
+    <button id="smartFit">🧠 Smart Fit (Test)</button>
+    <button id="forceFit80">🎯 Force Fit 80 (Test)</button>
+    <button id="xray">🩻 Toggle X-Ray</button>
+  </aside>
+
+  <script type="module">
+    import * as THREE from "three";
+    import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+
+    const status = document.getElementById("status");
+    const viewport = document.getElementById("viewport");
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(
+      75,
+      viewport.clientWidth / viewport.clientHeight,
+      0.1,
+      1000
+    );
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(viewport.clientWidth, viewport.clientHeight);
+    viewport.appendChild(renderer.domElement);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    camera.position.z = 5;
+    scene.add(new THREE.AmbientLight(0xffffff, 1));
+
+    status.textContent = "Three.js Loaded via CDN ✅";
+
+    function computeFitScore(tightPct, loosePct) {
+      const penalty = (tightPct * 5.0) + (loosePct * 0.15);
+      return Math.round(Math.max(0, Math.min(100, 100 - penalty)));
+    }
+
+    document.getElementById("smartFit").addEventListener("click", () => {
+      alert("Button is working! Fit Score Logic: " + computeFitScore(2, 93));
+    });
+
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    animate();
+  </script>
+</body>
+</html>

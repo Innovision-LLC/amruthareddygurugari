@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+numpy
+python-multipart
+
+# Optional: torch + pytorch3d for gradient-based optimization path.
+# If these are unavailable, backend auto-falls back to profile-based wrap.
+# torch
+# torchvision
+# git+https://github.com/facebookresearch/pytorch3d.git
